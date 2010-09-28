@@ -85,5 +85,15 @@ class AboutJavaInterop < EdgeCase::Koan
     assert_equal __(false), java_array.toString.is_a?(java.lang.String)
   end
 
+  def test_call_custom_class
+    number_generator = com.edgecase.JavaStuff.new
+    assert_equal __(true), number_generator.random_number > 0
+  end
 
+  # FREAKS OUT
+  # def test_call_ruby_to_java_to_ruby
+  #   number_generator = com.edgecase.JavaToRuby.new
+  #   puts number_generator.random_number
+  #   puts "*"*20
+  # end
 end

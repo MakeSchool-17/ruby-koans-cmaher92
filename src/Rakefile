@@ -10,3 +10,7 @@ task :test do
   ruby 'path_to_enlightenment.rb'
 end
 
+task :java do
+  `javac **/*.java`
+end
+
