@@ -124,7 +124,10 @@ module EdgeCase
       @pass_count = 0
       @failure = nil
       @failed_test = nil
-      @observations = []
+    end
+
+    def observations
+      @observations ||= []
     end
 
     PROGRESS_FILE_NAME = '.path_progress'
@@ -154,13 +157,13 @@ module EdgeCase
       if step.passed?
         @pass_count += 1
         if @pass_count > progress.last.to_i
-          @observations << Color.green("#{step.koan_file}##{step.name} has expanded your awareness.")
+          observations << Color.green("#{step.koan_file}##{step.name} has expanded your awareness.")
         end
       else
         @failed_test = step
         @failure = step.failure
         add_progress(@pass_count)
-        @observations << Color.red("#{step.koan_file}##{step.name} has damaged your karma.")
+        observations << Color.red("#{step.koan_file}##{step.name} has damaged your karma.")
         throw :edgecase_exit
       end
     end
@@ -175,7 +178,7 @@ module EdgeCase
 
     def instruct
       if failed?
-        @observations.each{|c| puts c }
+        observations.each{|c| puts c }
         encourage
         guide_through_error
         a_zenlike_statement
@@ -203,22 +206,23 @@ module EdgeCase
     end
 
     def end_screen
-      if EdgeCase.simple_output
-        boring_end_screen
+      screen = if EdgeCase.simple_output
+        end_message
       else
         artistic_end_screen
       end
+      puts screen
     end
 
-    def boring_end_screen
-      puts "Mountains are again merely mountains"
+    def end_message
+      "The student has become the master"
     end
 
     def artistic_end_screen
       "JRuby 1.9.x Koans"
       ruby_version = "(in #{'J' if defined?(JRUBY_VERSION)}Ruby #{defined?(JRUBY_VERSION) ? JRUBY_VERSION : RUBY_VERSION})"
       ruby_version = ruby_version.side_padding(54)
-        completed = <<-ENDTEXT
+      return <<-ENDTEXT
                                   ,,   ,  ,,
                                 :      ::::,    :::,
                    ,        ,,: :::::::::::::,,  ::::   :  ,
@@ -229,7 +233,7 @@ module EdgeCase
       ,:     , ,:,,:                                       :::::::::::::
      ::,:   ,,:::,                                           ,::::::::::::,
     ,:::, :,,:::                                               ::::::::::::,
-   ,::: :::::::,       Mountains are again merely mountains     ,::::::::::::
+   ,::: :::::::,#{        end_message.side_padding 48          },::::::::::::
    :::,,,::::::                                                   ::::::::::::
  ,:::::::::::,                                                    ::::::::::::,
  :::::::::::,                                                     ,::::::::::::
@@ -253,7 +257,6 @@ module EdgeCase
                       ,::::                         , ,,
                                                   ,,,
 ENDTEXT
-        puts completed
     end
 
     def encourage
@@ -430,21 +433,26 @@ ENDTEXT
   end
 
   class ThePath
+    def initialize(sensei=nil)
+      @sensei = sensei || Sensei.new
+    end
+
     def walk
-      sensei = EdgeCase::Sensei.new
       each_step do |step|
-        sensei.observe(step.meditate)
+        @sensei.observe(step.meditate)
       end
-      sensei.instruct
+      @sensei.instruct
     end
 
     def each_step
       catch(:edgecase_exit) {
         step_count = 0
         EdgeCase::Koan.subclasses.each_with_index do |koan,koan_index|
-          koan.testmethods.each do |method_name|
-            step = koan.new(method_name, koan.to_s, koan_index+1, step_count+=1)
-            yield step
+          if @sensei.instance_of?(EdgeCase::Sensei) || (koan.to_s != "AboutSensei")
+            koan.testmethods.each do |method_name|
+              step = koan.new(method_name, koan.to_s, koan_index+1, step_count+=1)
+              yield step
+            end
           end
         end
       }
